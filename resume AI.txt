@@ -1,0 +1,72 @@
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import wordnet
+
+
+def preprocess_text(text):
+    tokens = word_tokenize(text.lower())
+    
+    stop_words = set(stopwords.words("english"))
+    tokens = [token for token in tokens if token not in stop_words]
+    
+    lemmatizer = WordNetLemmatizer()
+    tokens = [lemmatizer.lemmatize(token) for token in tokens]
+    
+    return tokens
+
+def calculate_similarity(job_requirements, candidate_qualifications):
+    job_requirements = preprocess_text(job_requirements)
+    candidate_qualifications = preprocess_text(candidate_qualifications)
+    
+    job_synsets = [wordnet.synsets(token) for token in job_requirements]
+    candidate_synsets = [wordnet.synsets(token) for token in candidate_qualifications]
+    
+    similarity_scores = []
+    for job_synset in job_synsets:
+        for candidate_synset in candidate_synsets:
+            if job_synset and candidate_synset:
+                similarity = job_synset[0].path_similarity(candidate_synset[0])
+                if similarity:
+                    similarity_scores.append(similarity)
+    
+    if similarity_scores:
+        average_similarity = sum(similarity_scores) / len(similarity_scores)
+        return average_similarity
+    else:
+        return 0
+
+def find_best_candidate(job_requirements, candidate_list):
+    best_candidate = None
+    highest_similarity = 0
+    
+    for candidate in candidate_list:
+        candidate_qualifications = candidate['qualifications']
+        similarity = calculate_similarity(job_requirements, candidate_qualifications)
+        
+        if similarity > highest_similarity:
+            highest_similarity = similarity
+            best_candidate = candidate
+    
+    return best_candidate
+
+job_requirements = "We are looking for a candidate with experience in Python and Machine Learning."
+
+candidate_list = [
+    {'name': 'Riya Patil', 'qualifications': 'I have extensive experience in machine learning.'},
+    {'name': 'Smitha Joy', 'qualifications': 'I have worked on various machine learning projects and I am proficient in Python.'},
+    {'name': 'Neha Kumavat', 'qualifications': 'I am a Python developer with knowledge of machine learning algorithms.'},
+    {'name': 'Rahul Singh', 'qualifications': 'I have experience in machine learning and python.'},
+    {'name': 'Rajesh Verma', 'qualifications': 'I have learned machine learning and Python.'},
+    {'name': 'Suresh Desai', 'qualifications': 'I have worked on many projects in python.'},
+    {'name': 'Priyanka Variya', 'qualifications': 'Done Machine Learning Course from IIT delhi and done various python project.'},
+]
+
+best_candidate = find_best_candidate(job_requirements, candidate_list)
+
+if best_candidate:
+    print("Best candidate:", best_candidate['name'])
+    print("Qualification:", best_candidate['qualifications'])
+else:
+    print("No suitable candidate found.")
